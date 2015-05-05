@@ -19,7 +19,7 @@ class SnapReviewController extends Controller {
 
 	const user = "root";
 	const host ="localhost";
-	const password = "";
+	const password = "forzainter";
 	const database = "snapreview";
 
 	/**
