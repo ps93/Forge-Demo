@@ -14,10 +14,13 @@
 Route::get('/security/authenticate','SnapReviewController@login');
 Route::get('/security/recoverPassword','SnapReviewController@recover');
 Route::post('user','SnapReviewController@create');
-Route::get('me','SnapReviewController@me');
 Route::get('user/{id?}', 'SnapReviewController@userById');
 Route::get('/business/search/findAllSortedByRanking', 'SnapReviewController@sortByRanking');
 Route::get('/business/{id?}/reviews', 'SnapReviewController@getReviews');
+Route::get('me','SnapReviewController@me');
+
+
+
 
 
 

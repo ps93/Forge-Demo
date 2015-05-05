@@ -10,10 +10,17 @@ use Response;
 use App\Classes\User;
 use App\Classes\Hotel;
 use App\Classes\Review;
+use DB;
+
 
 //require_once('\Classes\class.php');
 
 class SnapReviewController extends Controller {
+
+	const user = "root";
+	const host ="localhost";
+	const password = "";
+	const database = "snapreview";
 
 	/**
 	 * Display a listing of the resource.
@@ -24,6 +31,9 @@ class SnapReviewController extends Controller {
 	{
 		//
 	}
+
+
+
 
 	/**
 	 * Show the form for creating a new resource.
@@ -51,11 +61,17 @@ class SnapReviewController extends Controller {
 
 	public function sortByRanking()
 	{
-		for($i=0; $i<10;$i++)
-			{
-				$hotels[]= new Hotel((string)$i,"name".$i,"category".$i,"reviewCount".$i,"rating".$i,rand(1, 10),"imageURL".$i,"profileImageURL".$i);
-			}
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
 
+		$result = mysqli_query($link,"SELECT id,name FROM hotels LIMIT 50");
+
+    $ranking = 1;
+
+		while ($row = mysqli_fetch_object($result))
+		{
+				$hotels[]= new Hotel($row->id,$row->name,"Bed and breakfast",rand(30,150),rand(1,200),$ranking,"https://tourismo.co/wp-content/uploads/2015/03/Ideal-Hotel-for-medical-travel.jpg");
+				$ranking++;
+		}
 
 			for($j=0;$j<count($hotels);$j++)
 	        {
@@ -77,98 +93,59 @@ class SnapReviewController extends Controller {
 
 	public function getReviews($id)
 	{
-		for($i=0; $i<5;$i++)
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
+		$result = mysqli_query($link, "SELECT feedback.title,feedback.timestamp AS created,
+																		frontuser.id,frontuser.firstName,frontuser.lastName,
+																		frontuser.creationDate,country.name AS country,frontuser.userName,
+																		frontuser.email FROM feedback,frontuser,country
+																		 where frontuser.id = feedback.frontuserId AND
+																		country.id=frontuser.countryId");
+
+		while ($row = mysqli_fetch_object($result))
 			{
-				$userTemp= new User("user".$i,(string)$i,"lastName".$i,"joinDate".$i,"country".$i,"phoneNumber".$i,"username".$i,"email".$i,"profileImageURL".$i);
-				$reviews[]= new Review("title".$i,"imageURL".$i,rand(1, 10),"created".$i,"username".$i,"email".$i,"profileImageURL",$i,"created".$i,$userTemp);
+				$userTemp= new User($row->firstName,(string)$row->id,$row->lastName,$row->creationDate,$row->country,"+390346 31044",$row->userName,$row->email,"http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/paesaggi_mare_montagna_234.jp");
+				$reviews[]= new Review($row->title,"http://images.oyster.com/photos/main-pool-delano-hotel-v196830-w902.jpg",rand(1,50),$row->created,$userTemp);
 			}
 
 
 		return Response::json($reviews,200);
 	}
 
-	public function userById($id)
-	{
 
-		for($i=0; $i<10;$i++)
-			{
-				$users[]= new User("user".$i,(string)$i,"lastName".$i,"joinDate".$i,"country".$i,"phoneNumber".$i,"username".$i,"email".$i,"profileImageURL".$i);
-			}
-
-		$errorCode = 0;
-		$errorMessage = "id non trovato";
-    $presente =  0;
-
-
-
-
-		if(empty($id))
-		{
-			return  response()->json([
-				'code' => $errorCode,
-				'message' => $errorMessage
-				],
-				400);
-		}
-		else
-		{
-			for ($i = 0; $i < count($users); $i++)
-			{
-				if($users[$i]->id == $id)
-						{
-							$presente = 1;
-							$foundPerson = $users[$i];
-						}
-
-			}
-
-			if($presente=="1")
-				return  response()->json([
-					'id' => $foundPerson->id,
-					'firstName' => $foundPerson->firstName,
-					'lastName' => $foundPerson->lastName,
-					'joinDate' => $foundPerson->joinDate,
-					'country' => $foundPerson->country,
-					'phoneNumber' => $foundPerson->phoneNumber,
-					'username' => $foundPerson->username,
-					'email' => $foundPerson->email,
-					'profileImageURL' => $foundPerson->profileImageURL,
-					],
-					200);
-				else
-				return  response()->json([
-					'code' => $errorCode,
-					'message' => $errorMessage
-					],
-					410);
-
-				}
-	}
 
 	public function create()
     {
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
 
 			$name = Request::input('name');
-			$surname = Request::input('surname');
+			$username = Request::input('username');
 			$email = Request::input('email');
 			$password = Request::input('password');
 
 			$errorCode = 0;
 			$errorMessage = "String";
 
-			if(empty($name)||empty($surname)||empty($email)||empty($password))
+			if(empty($name)||empty($username)||empty($email)||empty($password))
 			{
 
-				return response()->json("",400);
+				return response()->json("1",400);
 			}
 			else
-			return Response::json("",201);
+			{
+				if ($result = mysqli_query($link, "INSERT INTO frontuser(firstName,userName,email,password) VALUES ('".$name."','".$username."','".$email."','".$password."') " ) )
+				 return Response::json("",201);
+				else
+				return response()->json("2",400);
 
+			}
 
     }
 
     public function recover()
 		{
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
 			$errorCode = 0;
 			$errorMessage = "String";
 			$email = Request::input('email');
@@ -179,76 +156,200 @@ class SnapReviewController extends Controller {
 																	'message' => $errorMessage
 																 ]),400);
 			else
-				return response(" ", 200);
+				{
+					if ($result = mysqli_query($link, "SELECT email FROM frontuser WHERE email='".$email."'") )
+						{
+							$num_rows = mysqli_num_rows($result);
+							if($num_rows>0)
+								return response(" ", 200);
+							else
+								return response()->json(([
+																					'code' => $errorCode,
+																					'message' => $errorMessage
+																				]),400);
 
+						}
+					else
+						return response()->json(([
+																			'code' => $errorCode,
+																			'message' => $errorMessage
+																		 ]),400);
+
+
+				}
+
+
+		}
+
+		public function me(Request $request)
+		{
+			$token = Request::header('Token');
+			$errorCode = 401;
+			$errorMessage = "Unauthorized";
+
+
+			if(empty($token))
+				return response()->json((
+						[
+							'code' => $errorCode,
+							'message' => $errorMessage
+						]),401);
+			else
+				{
+					$link = mysqli_connect(self::host,self::user,self::password, self::database);
+					if ($result = mysqli_query($link, "SELECT frontuser.id,
+																										firstName,
+																										lastName,
+																										creationDate,
+																										country.name,
+																										userName,
+																										email
+																					FROM frontuser,country WHERE frontuser.id=".$token." AND country.id=frontuser.countryId"
+						 ))
+				    {
+							$foundPerson = mysqli_fetch_object($result);
+							if($foundPerson)
+								return response()->json([
+									'id' => $foundPerson->id,
+									'firstName' => $foundPerson->firstName,
+									'lastName' => $foundPerson->lastName,
+									'joinDate' => $foundPerson->creationDate,
+									'country' => $foundPerson->name,
+									'phoneNumber' => '+390346 31044',
+									'username' => $foundPerson->userName,
+									'email' => $foundPerson->email,
+									'profileImageURL' => 'http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/paesaggi_mare_montagna_234.jpg'
+									],
+									200);
+							else
+								return  response()->json([
+																					'code' => $errorCode,
+																					'message' => $errorMessage
+																			],401);
+
+
+						}
+					else
+						return  response()->json([
+																				'code' => $errorCode,
+																				'message' => $errorMessage
+																		],401);
+
+				}
+
+
+
+
+		}
+
+
+		public function userById($id)
+		{
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
+			$errorCodeBadRequest = 400;
+			$errorCodeGone = 410;
+			$errorMessageBadRequest = "Bad Request";
+			$errorMessageGone = "Gone";
+	    $presente =  0;
+
+
+			if(empty($id))
+			{
+				return  response()->json([
+					'code' => $errorCodeBadRequest,
+					'message' => $errorMessageBadRequest
+					],
+					$errorCodeBadRequest);
+			}
+			else
+			{
+				if ($result = mysqli_query($link, "SELECT frontuser.id,
+																									firstName,
+																									lastName,
+																									creationDate,
+																									country.name,
+																									userName,
+																									email
+																				FROM frontuser,country WHERE frontuser.id=".$id." AND country.id=frontuser.countryId"
+					 ))
+			    {
+						$foundPerson = mysqli_fetch_object($result);
+						if($foundPerson)
+							return response()->json([
+								'id' => $foundPerson->id,
+								'firstName' => $foundPerson->firstName,
+								'lastName' => $foundPerson->lastName,
+								'joinDate' => $foundPerson->creationDate,
+								'country' => $foundPerson->name,
+								'phoneNumber' => '+390346 31044',
+								'username' => $foundPerson->userName,
+								'email' => $foundPerson->email,
+								'profileImageURL' => 'http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/paesaggi_mare_montagna_234.jpg'
+								],
+								200);
+						else
+							return  response()->json([
+																				'code' => $errorCodeGone,
+																				'message' => $errorMessageGone
+																		],$errorCodeGone);
+
+
+					}
+				else
+					return  response()->json([
+																			'code' => $errorCodeGone,
+																			'message' => $errorMessageGone
+																	],$errorCodeGone);
+
+
+					}
 		}
 
 		public function login(Request $request)
 		{
-			$FINAL_USERNAME="paulo";
-			$FINAL_PASSWORD= "provapass";
+			$username = Request::input('username');
+			$password = Request::input('password');
 			$token = "un-token-di-risposta";
 			$errorCode = 0;
 			$errorMessage = "String";
+			$FINAL_USERNAME="";
+			$FINAL_PASSWORD= "";
+			$test="";
 
 
-			$username = Request::input('username');
-			$password = Request::input('password');
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
+			if ($result = mysqli_query($link, "SELECT userName,password FROM frontuser WHERE userName='".$username."'") )
+		    {
+					while ($row = mysqli_fetch_object($result))
+					 {
+						if($row->userName == $username)
+							{
+								$FINAL_USERNAME = $row->userName;
+								$FINAL_PASSWORD = $row->password;
+							}
+					 }
 
 
-			if( $username==$FINAL_USERNAME && $password==$FINAL_PASSWORD)
-				return response($token, 200);
-			else
-				{
-					return response()->json(([
-						'code' => $errorCode,
-						'message' => $errorMessage
-						]),400);
+					  if($FINAL_USERNAME ==$username && $FINAL_PASSWORD == $password)
+							return response($token, 200);
+						else
+							return response()->json(([
+																					'code' => $errorCode,
+																					'message' => $errorMessage
+																			]),400);
 
 				}
+			else
+				return response()->json(([
+																	'code' => $errorCode,
+																	'message' => $errorMessage
+																	]),400);
+
 		}
 
-	public function me(Request $request)
-	{
-		$token = Request::header('Token');
-		$userId = "String";
-		$firstName = "String";
-		$lastName = "String";
-		$joinDate = "String";
-		$country = "String";
-		$phoneNumber = "String";
-		$username = "String";
-		$email = "String";
-		$profileImageURL = "String";
-		$errorCode = 0;
-		$errorMessage = "String";
 
-
-		if(empty($token))
-			return response()->json((
-					[
-						'code' => $errorCode,
-						'message' => $errorMessage
-					]),401);
-		else
-			{
-				return response()->json((
-							[
-								'userId' => $userId,
-								'lastName' => $lastName,
-								'joinDate' => $joinDate,
-								'country' => $country,
-								'phoneNumber' => $phoneNumber,
-								'username' => $username,
-								'email' => $email,
-								'profileImageURL' => $profileImageURL,
-							]),200);
-			}
-
-
-		return $token;
-
-	}
 
 	public function test($username)
 	{
