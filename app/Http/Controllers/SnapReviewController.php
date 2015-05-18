@@ -124,19 +124,19 @@ class SnapReviewController extends Controller {
 			$password = Request::input('password');
 
 			$errorCode = 0;
-			$errorMessage = "String";
+			$errorMessage = "bad request";
 
 			if(empty($name)||empty($username)||empty($email)||empty($password))
 			{
 
-				return response()->json("1",400);
+				return response()->json($errorMessage,400);
 			}
 			else
 			{
 				if ($result = mysqli_query($link, "INSERT INTO frontuser(firstName,userName,email,password) VALUES ('".$name."','".$username."','".$email."','".$password."') " ) )
 				 return Response::json("",201);
 				else
-				return response()->json("2",400);
+				return response()->json($errorMessage,400);
 
 			}
 
@@ -320,6 +320,7 @@ class SnapReviewController extends Controller {
 
 			$link = mysqli_connect(self::host,self::user,self::password, self::database);
 
+
 			if ($result = mysqli_query($link, "SELECT userName,password FROM frontuser WHERE userName='".$username."'") )
 		    {
 					while ($row = mysqli_fetch_object($result))
@@ -331,14 +332,19 @@ class SnapReviewController extends Controller {
 							}
 					 }
 
-
-					  if($FINAL_USERNAME ==$username && $FINAL_PASSWORD == $password)
-							return response($token, 200);
+					if($FINAL_USERNAME != "")
+					  if($FINAL_USERNAME ==$username && $FINAL_PASSWORD == $password )
+							return response($token, 200)->header('Content-Type','text/plain');
 						else
 							return response()->json(([
 																					'code' => $errorCode,
 																					'message' => $errorMessage
 																			]),400);
+					else
+					return response()->json(([
+																			'code' => $errorCode,
+																			'message' => $errorMessage
+																	]),400);
 
 				}
 			else
