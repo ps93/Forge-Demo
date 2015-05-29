@@ -10,6 +10,7 @@ use Response;
 use App\Classes\User;
 use App\Classes\Hotel;
 use App\Classes\Review;
+use App\Classes\ErrorObject;
 use DB;
 
 
@@ -91,25 +92,197 @@ class SnapReviewController extends Controller {
 		return $hotels;
 	}
 
+
+
+  public function myFavourites()
+	{
+
+		$start = Request::input('start');
+		$count = Request::input('count');
+
+
+
+
+	}
+
+
 	public function getReviews($id)
 	{
-		$link = mysqli_connect(self::host,self::user,self::password, self::database);
-		$result = mysqli_query($link, "SELECT feedback.title,feedback.timestamp AS created,
-																		frontuser.id,frontuser.firstName,frontuser.lastName,
-																		frontuser.creationDate,country.name AS country,frontuser.userName,
-																		frontuser.email FROM feedback,frontuser,country
-																		 where frontuser.id = feedback.frontuserId AND
-																		country.id=frontuser.countryId");
 
-		while ($row = mysqli_fetch_object($result))
+		$start = Request::input('start');
+		$count = Request::input('count');
+
+		$start = (int)$start;
+		$count = (int)$count;
+
+
+		if(empty($start)||empty($count) )
+		{
 			{
-				$userTemp= new User($row->firstName,(string)$row->id,$row->lastName,$row->creationDate,$row->country,"+390346 31044",$row->userName,$row->email,"http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/paesaggi_mare_montagna_234.jp");
-				$reviews[]= new Review($row->title,"http://images.oyster.com/photos/main-pool-delano-hotel-v196830-w902.jpg",rand(1,50),$row->created,$userTemp);
+				$myError = new ErrorObject("dati non validi",400);
+				return Response::json($myError,400);
+
+			}
+		}
+		else
+		{
+
+					$link = mysqli_connect(self::host,self::user,self::password, self::database);
+					$result = mysqli_query($link, "SELECT feedback.title,feedback.timestamp AS created,
+																					frontuser.id,frontuser.firstName,frontuser.lastName,
+																					frontuser.creationDate,country.name AS country,frontuser.userName,
+																					frontuser.email FROM feedback,frontuser,country
+																					 where frontuser.id = feedback.frontuserId AND
+																					country.id=frontuser.countryId AND feedback.id >".$start." LIMIT ".$count."");
+
+
+
+					while ($row = mysqli_fetch_object($result))
+						{
+							$userTemp= new User($row->firstName,$row->userName,$row->email,"password");
+							$userTemp->id= $row->id;
+							$userTemp->lastName =  $row->lastName;
+							$userTemp->joinDate = $row->creationDate;
+							$userTemp->country = $row->country;
+							$userTemp->phoneNumber = "+390346 31044";
+							$userTemp->username = $row->userName;
+							$reviews[]= new Review($row->title,"http://images.oyster.com/photos/main-pool-delano-hotel-v196830-w902.jpg",rand(1,50),$row->created,$userTemp);
+
+						}
+
+
+						return response()->json(([
+								'__metadata' => count($reviews),
+									'data' => $reviews ]),200);
+	 }
+	}
+
+	public function deleteNotif($id)
+	{
+
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
+			$query = "DELETE FROM feedback
+				WHERE id=".$id."";
+
+
+
+				if ($result = mysqli_query($link, $query ) )
+				 return response(null, 200);
+			 else
+				{
+					$myError = new ErrorObject("cancellazione notifica fallita",400);
+					return Response::json($myError,400);
+
+				}
+
+	}
+
+
+
+	public function deleteNotifAll()
+	{
+
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
+			$query = "DELETE * FROM feedback";
+
+
+
+				if ($result = mysqli_query($link, $query ) )
+				 return response(null, 200);
+			 else
+				{
+					$myError = new ErrorObject("cancellazione notifiche fallita",400);
+					return Response::json($myError,400);
+
+				}
+
+	}
+
+
+
+	public function notifications()
+	{
+
+		$start = Request::input('start');
+		$count = Request::input('count');
+		$start = (int)$start;
+		$count = (int)$count;
+
+
+
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
+		$query = "SELECT id,frontuserId, text , timestamp FROM feedback where id >".$start." LIMIT ".$count."";
+
+
+		if(empty($start)||empty($count) )
+		{
+			{
+				$myError = new ErrorObject("dati non validi",400);
+				return Response::json($myError,400);
+
+			}
+		}
+		else
+		{
+			$result= mysqli_query($link,$query);
+			if($result)
+			{
+
+
+				while($notifications = mysqli_fetch_object($result))
+				{
+					$array[] = $notifications;
+				}
+
+
+					return response()->json(([
+															'__metadata' => count($array),
+															'data' => $array
+														]));
+
+			}
+			else {
+				$myError = new ErrorObject("non ci sono notifiche",400);
+				return Response::json($myError,400);
 			}
 
+		}
 
-		return Response::json($reviews,200);
 	}
+
+
+
+	public function modify()
+	{
+
+		$userId = Request::input('userId');
+		$firstName = Request::input('firstName');
+		$lastName = Request::input('lastName');
+		$joinDate = Request::input('joinDate');
+		$country = Request :: input('country'); //oggetto
+		$phoneNumber = request :: input('phoneNumber');
+		$username = request :: input('username');
+		$email = request :: input('email');
+		$profileImageURL = request :: input('profileImageURL');
+
+
+
+		if(empty($userId)||empty($firstName)||empty($lastName)||empty($joinDate)
+		||empty($country)||empty($phoneNumber)||empty($email)||empty($username)||empty($profileImageURL))
+
+		{
+			$myError = new ErrorObject("modifica utente fallito",400);
+			return Response::json($myError,400);
+
+		}
+
+		else
+			return response(null, 200);
+
+
+
+	}
+
 
 
 
@@ -124,19 +297,22 @@ class SnapReviewController extends Controller {
 			$password = Request::input('password');
 
 			$errorCode = 0;
-			$errorMessage = "String";
+			$errorMessage = "bad request";
 
 			if(empty($name)||empty($username)||empty($email)||empty($password))
 			{
-
-				return response()->json("1",400);
+				$myError = new ErrorObject("campi incompleti",400);
+				return Response::json($myError,400);
 			}
 			else
 			{
 				if ($result = mysqli_query($link, "INSERT INTO frontuser(firstName,userName,email,password) VALUES ('".$name."','".$username."','".$email."','".$password."') " ) )
-				 return Response::json("",201);
+				 return response(null, 201);
 				else
-				return response()->json("2",400);
+				{
+					$myError = new ErrorObject("inserimento utente fallito",400);
+					return Response::json($myError,400);
+				}
 
 			}
 
@@ -180,6 +356,7 @@ class SnapReviewController extends Controller {
 
 
 		}
+
 
 		public function me(Request $request)
 		{
@@ -320,6 +497,7 @@ class SnapReviewController extends Controller {
 
 			$link = mysqli_connect(self::host,self::user,self::password, self::database);
 
+
 			if ($result = mysqli_query($link, "SELECT userName,password FROM frontuser WHERE userName='".$username."'") )
 		    {
 					while ($row = mysqli_fetch_object($result))
@@ -331,14 +509,19 @@ class SnapReviewController extends Controller {
 							}
 					 }
 
-
-					  if($FINAL_USERNAME ==$username && $FINAL_PASSWORD == $password)
-							return response($token, 200);
+					if($FINAL_USERNAME != "")
+					  if($FINAL_USERNAME ==$username && $FINAL_PASSWORD == $password )
+							return response($token, 200)->header('Content-Type','text/plain');
 						else
 							return response()->json(([
 																					'code' => $errorCode,
 																					'message' => $errorMessage
 																			]),400);
+					else
+					return response()->json(([
+																			'code' => $errorCode,
+																			'message' => $errorMessage
+																	]),400);
 
 				}
 			else
