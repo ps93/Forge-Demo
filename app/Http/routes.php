@@ -220,16 +220,53 @@ Route::get('user/{id?}', 'SnapReviewController@userById');
 
 Route::get('/me/notifications/all', 'SnapReviewController@deleteNotifAll');
 
+
+Route::get('/businesses/search/findAllNearMe', 'SnapReviewController@findNear');
+
+Route::get('/countries', 'SnapReviewController@countries');
+
+Route::get('/countries', 'SnapReviewController@countries');
+
+Route::delete('/me', 'SnapReviewController@deleteMe');
+
+
 Route::get('/me/favourites', 'SnapReviewController@myFavourites');
 
 
+Route::put('/me/favourites/{id?}', 'SnapReviewController@myFavouritesById');
 
 
+Route::delete('/me/favourites/{id?}', 'SnapReviewController@deleteMyFavouritesById');
 
 
+Route::delete('/me/favourites/all', 'SnapReviewController@deleteMyFavouritesAll');
+
+Route::get('/me/social/invite', 'SnapReviewController@invite');
+
+Route::get('/reviews/{id?}', 'SnapReviewController@GetReviewById');
+
+Route::post('/security/validate', 'SnapReviewController@validateNumber');
 
 
+Route::post('/me/profileImage', 'SnapReviewController@myProfileImage');
 
+Route::post('/search/find', 'SnapReviewController@query');
+
+Route::get('/security/validate', 'SnapReviewController@validateCode');
+
+
+ Route::get('/business/{id?}', 'SnapReviewController@businessById');
+
+ Route::get('/me/reviews', 'SnapReviewController@myReviews');
+
+ /*
+ POST: /me/reviews
+PUT: /me/reviews/:id
+DELETE: /me/reviews/:id
+MANCA
+GET: /me/reviews/:id/snaps
+POST: /me/reviews/:id/snaps
+DELETE: /me/reviews/:id/snaps*/
 
 
 

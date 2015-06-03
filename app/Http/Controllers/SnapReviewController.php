@@ -10,6 +10,9 @@ use Response;
 use App\Classes\User;
 use App\Classes\Hotel;
 use App\Classes\Review;
+use App\Classes\Snap;
+use App\Classes\Country;
+use App\Classes\Location;
 use App\Classes\ErrorObject;
 use DB;
 
@@ -58,13 +61,183 @@ class SnapReviewController extends Controller {
 	 * @param  int  $id
 	 * @return Response
 	 */
+	public function findNear()
+	{
+
+		$lat = Request::input('lat');
+		$long = Request::input('long');
+
+
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
+			$result = mysqli_query($link,"SELECT id,name,shortDescription,address,phone,webPage,latX,longY,rooms,postCode FROM business LIMIT 10");
+
+			while ($row = mysqli_fetch_object($result))
+			{
+
+					$row->category = "String";
+					$row->ranking =1;
+					$row->ranking =1;
+					$row->reviewCount =10;
+					$row->country = new Country(1,"Italy");
+					$row->location = new Location(1,"Prova");
+					$businesses[]= $row;
+
+			}
+
+
+			return response()->json(([
+					'__metadata' => count($businesses),
+						'data' => $businesses ]),200);
+
+	}
+
+
+	public function countries()
+	{
+
+		$lat = Request::input('lat');
+		$long = Request::input('long');
+
+
+			$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
+			$result = mysqli_query($link,"SELECT id,name FROM country");
+
+			while ($row = mysqli_fetch_object($result))
+			{
+					$countries[]= $row;
+
+			}
+
+
+			return response()->json(([
+					'__metadata' => count($countries),
+						'data' => $countries ]),200);
+
+	}
+
+	public function deleteMe()
+	{
+
+		$token = Request::input('token');
+
+		if(!empty($token))
+			return response(null, 200);
+		else {
+			$myError = new ErrorObject("non hai i permessi",400);
+			return Response::json($myError,400);
+		}
+
+	}
+
+
+	public function myProfileImage()
+	{
+
+		$file = Request::file('photo');
+		$token = Request::input('token');
+
+		if (Request::hasFile('photo'))
+			return response(null, 200);
+		else {
+			$myError = new ErrorObject("invalid photo",400);
+			return Response::json($myError,400);
+		}
+
+	}
+
+
+	public function query()
+	{
+		$query = Request::input('query');
+		$obj =(object) array();
+
+		if(!empty($query))
+			return response()->json($obj,200);
+			else {
+				$myError = new ErrorObject("invalid query",400);
+				return Response::json($myError,400);
+			}
+
+	}
+
+
+	public function businessById($id)
+	{
+
+			if(!empty($id))
+			{
+					$link = mysqli_connect(self::host,self::user,self::password, self::database);
+
+					$result = mysqli_query($link,"SELECT id,name,shortDescription,address,phone,webPage,latX,longY,rooms,postCode FROM business where id=".$id."");
+
+					while ($row = mysqli_fetch_object($result))
+					{
+
+							$row->category = "String";
+							$row->ranking =1;
+							$row->ranking =1;
+							$row->reviewCount =10;
+							$row->country = new Country(1,"Italy");
+							$row->location = new Location(1,"Prova");
+							$businesses[]= $row;
+
+					}
+
+
+					return response()->json( $businesses ,200);
+
+			}
+			else {
+				$myError = new ErrorObject("invalid query",400);
+				return Response::json($myError,400);
+			}
+		}
+
+
+		public function myReviews()
+		{
+			$start = Request::input('start');
+			$start = (int)$start;
+			$count = Request::input('count');
+
+
+			if(empty($start)||empty($count)){
+				$i=0;
+				$count = 20 ;
+			}
+			else {
+				$i=$start;
+				$count = $count;
+			}
+
+			for($i ; $i<$count+$start; $i++)
+				$reviews[]=new Review($i,"title","http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/irreale_paesaggio_lacustre.jpg",1,"2015/06/03 10:15");
+
+
+				return response()->json(([
+						'__metadata' => count($reviews),
+							'data' => $reviews ]),200);
+
+
+		}
 
 
 	public function sortByRanking()
 	{
+		$start = Request::input('start');
+		$start = (int)$start;
+		$count = Request::input('count');
+
+
+
 		$link = mysqli_connect(self::host,self::user,self::password, self::database);
 
-		$result = mysqli_query($link,"SELECT id,name FROM hotels LIMIT 50");
+		if(empty($start)||empty($count))
+			$result = mysqli_query($link,"SELECT id,name FROM hotels LIMIT 50");
+		else
+			$result = mysqli_query($link,"SELECT id,name FROM hotels WHERE hotels.id>".$start." LIMIT ".$count."");
 
     $ranking = 1;
 
@@ -98,12 +271,183 @@ class SnapReviewController extends Controller {
 	{
 
 		$start = Request::input('start');
+		$start = (int)$start;
 		$count = Request::input('count');
 
+		$link = mysqli_connect(self::host,self::user,self::password, self::database);
 
+		if(empty($start)||empty($count) )
+			$result = mysqli_query($link,"SELECT id,name,shortDescription,address,phone,webPage,latX,longY,rooms,postCode FROM business LIMIT 10");
+		else
+			$result = mysqli_query($link,"SELECT id,name,shortDescription,address,phone,webPage,latX,longY,rooms,postCode FROM business WHERE business.id >".$start." LIMIT ".$count."");
+
+		while ($row = mysqli_fetch_object($result))
+		{
+
+				$row->category = "String";
+				$row->ranking =1;
+				$row->ranking =1;
+				$row->reviewCount =10;
+				$row->country = new Country(1,"Italy");
+				$row->location = new Location(1,"Prova");
+				$businesses[]= $row;
+
+		}
+
+
+		return response()->json(([
+				'__metadata' => count($businesses),
+					'data' => $businesses ]),200);
+
+	}
+
+
+
+
+	public function myFavouritesById($id)
+	{
+
+		if(!empty($id))
+			return response(null, 200);
+
+		else
+		{
+			$myError = new ErrorObject("id business invalid",400);
+			return Response::json($myError,400);
+
+		}
 
 
 	}
+
+	public function deleteMyFavouritesById($id)
+	{
+
+		if(!empty($id))
+			return response(null, 200);
+
+		else
+		{
+			$myError = new ErrorObject("id business invalid",400);
+			return Response::json($myError,400);
+
+		}
+
+
+	}
+
+	public function deleteMyFavouritesAll()
+	{
+
+		if(!empty($id))
+			return response(null, 200);
+
+		else
+		{
+			$myError = new ErrorObject("id business invalid",400);
+			return Response::json($myError,400);
+
+		}
+
+
+	}
+
+
+
+		public function invite()
+		{
+
+			$email = Request::input('email');
+
+			if(empty($email))
+				{
+					$myError = new ErrorObject("email invalid",400);
+					return Response::json($myError,400);
+
+				}
+			else
+			return response(null, 200);
+
+
+
+		}
+
+
+		public function validateNumber()
+		{
+
+			$number = Request::input('phoneNumber');
+
+			if(empty($number))
+				{
+					$myError = new ErrorObject("phone number missing",400);
+					return Response::json($myError,400);
+
+				}
+			else
+			{
+				if(is_numeric($number))
+				return response(null, 200);
+				else {
+					$myError = new ErrorObject("phone number invalid",400);
+					return Response::json($myError,400);
+				}
+			}
+
+		}
+
+		public function validateCode()
+		{
+
+			$code = Request::input('code');
+
+			if(empty($code))
+				{
+					$myError = new ErrorObject("code missing",400);
+					return Response::json($myError,400);
+
+				}
+			else
+				return response(null, 200);
+
+		}
+
+
+	public function GetReviewById($id)
+		{
+
+				$link = mysqli_connect(self::host,self::user,self::password, self::database);
+				$result = mysqli_query($link, "SELECT feedback.title,feedback.timestamp AS created,
+																				frontuser.id,frontuser.firstName,frontuser.lastName,
+																				frontuser.creationDate,country.name AS country,frontuser.userName,
+																				frontuser.email FROM feedback,frontuser,country
+																				where frontuser.id = feedback.frontuserId AND
+																				country.id=frontuser.countryId AND feedback.id=".$id."");
+
+
+
+				while ($row = mysqli_fetch_object($result))
+					{
+						$userTemp= new User($row->firstName,$row->userName,$row->email,"password");
+						$userTemp->id= $row->id;
+						$userTemp->lastName =  $row->lastName;
+						$userTemp->joinDate = $row->creationDate;
+						$userTemp->country = $row->country;
+						$userTemp->phoneNumber = "+390346 31044";
+						$userTemp->username = $row->userName;
+						$reviews= new Review($row->title,"http://images.oyster.com/photos/main-pool-delano-hotel-v196830-w902.jpg",rand(1,50),$row->created,$userTemp);
+						$snaps[] = new Snap(5,"http://www.boorp.com/sfondi_gratis_desktop_pc/sfondi_gratis/sfondi_paesaggi_mare_montagna/verde_paesaggio.jpg",2,"category","subcategory");
+						$snaps[] = new Snap(6,"http://www.enkivillage.com/s/upload/images/2015/01/ff15b621676dcacc43c73f887f7271b6.jpg",3,"category1","subcategory1");
+						$reviews->snaps = $snaps;
+					}
+
+					if(count($row>0))
+					return response()->json($reviews,200);
+
+
+		 }
+
+
 
 
 	public function getReviews($id)

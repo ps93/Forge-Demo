@@ -1,5 +1,5 @@
 <?php namespace App\Classes;
-class Country {
+class Location {
 
         // variabili membro
         public $id = "";

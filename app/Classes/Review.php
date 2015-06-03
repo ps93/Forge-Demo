@@ -7,12 +7,13 @@ class Review {
         public $imageURL;
         public $rating;
         public $created;
-        public $user;
+        public $id;
 
 
-        public function __construct($title,$imageURL,$rating,$created,$user)
+        public function __construct($id,$title,$imageURL,$rating,$created)
                 {
                     //inizializzazione della proprietà $name
+                    $this->id = $id;
                     $this->title = $title;
                     $this->imageURL = $imageURL;
                     $this->rating = $rating;
@@ -28,7 +29,6 @@ class Review {
                     $user->email,
                     $user->profileImageURL);
 */
-    $this->user = new User("user",1,"lastName","joinDate","country","phoneNumber","username","email","profileImageURL");
                 }
 
 
